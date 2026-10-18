@@ -1,0 +1,9 @@
+sheet_classes ok
+sheet_companions ok
+sheet_humans ok
+sheet_bosses ok
+sheet_npcs ok
+sheet_nature ok
+sheet_props ok
+sheet_items ok
+title_art ok

@@ -1,0 +1,9 @@
+# Godot cache / build output
+game/.godot/
+game/export/
+*.translation
+
+# OS / tools
+.DS_Store
+__pycache__/
+*.pyc

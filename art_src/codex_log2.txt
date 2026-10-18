@@ -1,0 +1,10 @@
+portraits_a ok
+portraits_b ok
+ill_hall ok
+ill_pact ok
+ill_cliff ok
+ill_void ok
+ill_revolution ok
+ill_ending ok
+ill_mirror ok
+sheet_story ok

@@ -1,0 +1,12 @@
+bd_beach ok
+bd_village ok
+bd_steppe ok
+bd_cliff ok
+bd_farm ok
+bd_slaughter ok
+sheet_beach ok
+sheet_village ok
+sheet_steppe ok
+sheet_farm ok
+sheet_flora ok
+sheet_ground ok

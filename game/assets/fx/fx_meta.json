@@ -1,0 +1,77 @@
+{
+  "fx_slash": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 6
+  },
+  "fx_claw": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 5
+  },
+  "fx_hit": {
+    "frame_w": 32,
+    "frame_h": 32,
+    "frames": 4
+  },
+  "fx_blood": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 6
+  },
+  "fx_fire": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 8
+  },
+  "fx_ice": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 6
+  },
+  "fx_heal": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 8
+  },
+  "fx_poison": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 6
+  },
+  "fx_shield": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 6
+  },
+  "fx_dark": {
+    "frame_w": 48,
+    "frame_h": 48,
+    "frames": 6
+  },
+  "fx_buff": {
+    "frame_w": 32,
+    "frame_h": 48,
+    "frames": 6
+  },
+  "fx_debuff": {
+    "frame_w": 32,
+    "frame_h": 48,
+    "frames": 6
+  },
+  "fx_peck": {
+    "frame_w": 32,
+    "frame_h": 32,
+    "frames": 4
+  },
+  "fx_lightning": {
+    "frame_w": 32,
+    "frame_h": 64,
+    "frames": 5
+  },
+  "fx_egg": {
+    "frame_w": 32,
+    "frame_h": 32,
+    "frames": 6
+  }
+}
