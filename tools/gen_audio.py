@@ -2439,6 +2439,15 @@ def d_ride(f, dur, vel, dec=0.7):
     return fin(x * att(n, 0.0005)) * vel * 0.22
 
 
+def d_heart(f, dur, vel):
+    """Soft, muffled heartbeat thump (no click -- for near-silent stealth music)."""
+    n = ns(0.5)
+    t = t_(n)
+    x = np.sin(TAU * np.cumsum(40 + 35 * np.exp(-t / 0.03)) / SR) * np.exp(-t / 0.12)
+    x += lp(noise(n), 180) * np.exp(-t / 0.03) * 0.6
+    return fin(lp(x, 400) * att(n, 0.006)) * vel * 0.8
+
+
 def d_brush(f, dur, vel):
     n = ns(0.25)
     t = t_(n)
@@ -2537,9 +2546,9 @@ def chop(brk, spb, seq):
 # --- drum kit bus ---------------------------------------------------------------------------
 class Kit:
     SPEC = {
-        'ck': (d_chipkick, 0.6, 0.03, {}), 'cs': (d_chipsnare, 0.5, 0.1, {}), 'ch': (d_chiphat, 0.35, 0.04, {}),
-        'co': (d_chiphat, 0.28, 0.06, {'dec': 0.11}), 'ct': (d_tom, 0.45, 0.12, {}),
-        'bk': (d_bkick, 0.6, 0.02, {}), 'bs': (d_bsnare, 0.42, 0.07, {}), 'bh': (d_hat, 0.25, 0.03, {'dec': 0.022}),
+        'ck': (d_chipkick, 0.6, 0.03, {}), 'cs': (d_chipsnare, 0.65, 0.1, {}), 'ch': (d_chiphat, 0.75, 0.04, {}),
+        'co': (d_chiphat, 0.5, 0.06, {'dec': 0.11}), 'ct': (d_tom, 0.4, 0.12, {}),
+        'bk': (d_bkick, 0.5, 0.02, {}), 'bs': (d_bsnare, 0.42, 0.07, {}), 'bh': (d_hat, 0.6, 0.03, {'dec': 0.022}),
         'rd': (d_ride, 0.3, 0.08, {}), 'cr': (d_crash, 0.42, 0.2, {}), 'sh': (d_shaker, 0.5, 0.08, {}),
         'cl': (d_clave, 0.3, 0.15, {}), 'cg': (d_conga, 0.4, 0.12, {}), 'kd': (k_dhe, 0.55, 0.12, {}),
         'kt': (k_tak, 0.6, 0.12, {}), 'ku': (k_tung, 0.45, 0.12, {}), 'br': (d_brush, 0.5, 0.15, {}),
@@ -2635,8 +2644,9 @@ def subdrop(dur=1.4, f0=110, f1=32):
 
 def clang(f=700, vel=1.0):
     """Cleaver-on-anvil metallic hit (inharmonic FM + noise)."""
-    return i_bell(f, 0.5, vel, ratio=1.41, index=3.5, decay=0.6) + \
-        fin(hp(noise(ns(0.05)), 3000) * np.exp(-t_(ns(0.05)) / 0.006) * att(ns(0.05), 0.0004)) * 0.3 * vel
+    m = ns(0.05)
+    tick = fin(hp(noise(m), 3000) * np.exp(-t_(m) / 0.006) * att(m, 0.0004)) * 0.3 * vel
+    return mix(0.1, [(0, i_bell(f, 0.5, vel, ratio=1.41, index=3.5, decay=0.6)), (0, tick)])
 
 
 def buzz_sig(dur):
@@ -2737,16 +2747,16 @@ def song_battle_1():
     la, lb, ld = lead_ev(a, 0.9), lead_ev(b, 0.9), lead_ev(d, 0.85)
     S.add(la + lb, i_square, gain=0.7, rev=0.16, echo=(0.75, 0.2, 0.12), duty=0.25, vib=(6.0, 0.18, 0.15), name='lead')
     S.add(shift(lb, semis=-12, velmul=0.7), i_brass, gain=0.4, rev=0.2, name='brass')
-    S.add(ld, i_supersaw, gain=0.5, rev=0.18, echo=(0.75, 0.25, 0.16), name='dnb-saw')
-    S.add(ld, i_square, gain=0.3, rev=0.12, duty=0.125, vib=None, a=0.002, d=0.08, s=0.5, r=0.04, name='dnb-sq')
+    S.add(ld, i_supersaw, gain=1.5, rev=0.18, echo=(0.75, 0.25, 0.16), name='dnb-saw')
+    S.add(ld, i_square, gain=0.8, rev=0.12, duty=0.125, vib=None, a=0.002, d=0.08, s=0.5, r=0.04, name='dnb-sq')
     cb = ostinato(a['T'], ['r', 'o'], 0.5, 38, 0.75) + \
         ostinato(b['T'], ['r', 'r', 'o', 'r', 'f', 'r', 'o', 'A'], 0.5, 38, 0.75)
     S.add_sig(reese(cb, S, det=0.08, cut=240, env_oct=2.6, env_tau=0.07, q=1.8, drive=1.4, sub=0.45,
-                    mod=cmod(32, 1.4)), gain=0.7, rev=0.03, name='chip-bass')
+                    mod=cmod(32, 1.4)), gain=0.6, rev=0.03, name='chip-bass')
     rz = riff(d['T'], [(0, 'r', 1.4, 1.0), (1.5, 'r', 0.5, 0.8), (2.5, 'o', 0.7, 0.9), (3.25, 'f', 0.7, 0.85)], low=35)
     S.add_sig(reese(rz, S, det=0.22, cut=280, env_oct=1.3, env_tau=0.2, q=1.3, drive=2.4, sub=1.0, mod=cmod(2, 1.0)),
-              gain=0.8, rev=0.02, name='reese')
-    S.add(arp_ev(b['T'] + d['T'], [0, 1, 2, 3, 4, 5, 4, 3], 0.25, low=62, vel=0.4), i_square, gain=0.4, rev=0.2,
+              gain=0.65, rev=0.02, name='reese')
+    S.add(arp_ev(b['T'] + d['T'], [0, 1, 2, 3, 4, 5, 4, 3], 0.25, low=62, vel=0.4), i_square, gain=0.7, rev=0.2,
           duty=0.125, a=0.002, d=0.04, s=0.3, r=0.02, vib=None, name='arp')
     S.add(pad_ev(A.T('chip'), low=54, vel=0.45), i_strings, gain=0.28, rev=0.35, a=0.1, r=0.4, cut=2200, name='pad')
     S.add(pad_ev(d['T'], low=52, vel=0.5), i_pad, gain=0.3, rev=0.45, a=0.4, r=1.0, name='dnb-pad')
@@ -2761,7 +2771,7 @@ def song_battle_1():
     brk = make_break(S.spb)
     S.add_sig(chop(brk, S.spb, '4 5 4 5 12s 12s 12 13'), a['start'] + 30, gain=0.85, rev=0.04, name='pop-1')
     S.add_sig(chop(brk, S.spb, CHOPS['f']), b['start'] + 28, gain=0.85, rev=0.04, name='pop-2')
-    S.add_sig(chop(brk, S.spb, chops('a b x c a b z v')), d['start'], gain=1.0, rev=0.04, name='break')
+    S.add_sig(chop(brk, S.spb, chops('a b x c a b z v')), d['start'], gain=0.8, rev=0.04, name='break')
     S.add_sig(riser_sig(4 * S.spb), b['start'] + 28, gain=0.3, rev=0.2, name='riser')
     S.add_sig(subdrop(), d['start'], gain=0.5, rev=0.0, name='subdrop')
     return S.render()
@@ -2789,21 +2799,21 @@ def song_battle_2():
     d = A.sec('dnb', ['Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Gb', 'C7'], B2_D)
     S = Song(168, A.pos, tail=4, t60=1.5, bright=0.4, drive=1.6)
     la, lb, ld = lead_ev(a, 0.85), lead_ev(b, 0.85), lead_ev(d, 0.9)
-    S.add(la, i_square, gain=0.7, rev=0.2, echo=(0.75, 0.32, 0.25), duty=0.125, a=0.002, d=0.07, s=0.45, r=0.03,
+    S.add(la, i_square, gain=1.1, rev=0.2, echo=(0.75, 0.32, 0.25), duty=0.125, a=0.002, d=0.07, s=0.45, r=0.03,
           vib=None, name='tiptoe')
-    S.add(lb, i_square, gain=0.6, rev=0.25, echo=(1.5, 0.25, 0.18), duty=0.125, vib=(5.0, 0.25, 0.2), name='lead-b')
+    S.add(lb, i_square, gain=0.85, rev=0.25, echo=(1.5, 0.25, 0.18), duty=0.125, vib=(5.0, 0.25, 0.2), name='lead-b')
     S.add(shift(lb, semis=-12, velmul=0.6), i_strings, gain=0.35, rev=0.3, a=0.05, r=0.3, cut=1800, voices=2,
           name='lead-b-low')
-    S.add(shift(ld, semis=-12), i_squelch, gain=0.5, rev=0.12, echo=(0.75, 0.3, 0.2), cut=220, env_oct=4.2, q=5.5,
+    S.add(shift(ld, semis=-12), i_squelch, gain=1.0, rev=0.12, echo=(0.75, 0.3, 0.2), cut=220, env_oct=4.2, q=5.5,
           name='acid')
-    S.add(ld, i_square, gain=0.3, rev=0.2, duty=0.25, vib=None, a=0.002, d=0.1, s=0.5, r=0.03, name='dnb-sq')
+    S.add(ld, i_square, gain=0.75, rev=0.2, duty=0.25, vib=None, a=0.002, d=0.1, s=0.5, r=0.03, name='dnb-sq')
     cb = ostinato(a['T'], ['r', None, 'o', None, 'r', 't', None, 'A'], 0.5, 41, 0.5) + \
         ostinato(b['T'], ['r', None, 'r', 'o', None, 'r', 'f', 'A'], 0.5, 41, 0.5)
     S.add_sig(reese(cb, S, det=0.05, cut=200, env_oct=2.8, env_tau=0.05, q=2.6, drive=1.6, sub=0.5, gap=0.02,
                     mod=cmod(16, 0.8)), gain=0.7, rev=0.04, name='sneak-bass')
     rz = riff(d['T'], [(0, 'r', 0.75, 1.0), (0.75, 'r', 0.75, 0.85), (1.5, 'o', 0.5, 0.8), (2.5, 'r', 1.5, 0.9)], low=29)
     S.add_sig(reese(rz, S, det=0.3, cut=170, env_oct=1.6, env_tau=0.25, q=1.4, drive=2.8, sub=1.0, mod=cmod(4, 1.6)),
-              gain=0.85, rev=0.02, name='reese')
+              gain=0.65, rev=0.02, name='reese')
     S.add(arp_ev(a['T'], [None, None, 6, None, None, 5, None, 4], 0.5, low=72, vel=0.35), i_bell, gain=0.35, rev=0.5,
           ratio=3.5, index=1.0, decay=0.8, name='celesta')
     S.add(pad_ev(b['T'], low=53, vel=0.45), i_strings, gain=0.3, rev=0.4, a=0.3, r=0.6, cut=1500, trem=0.5, name='trem')
@@ -2822,7 +2832,7 @@ def song_battle_2():
     brk = make_break(S.spb, tone=185)
     S.add_sig(chop(brk, S.spb, '4 5 4 5 4s 4s 12s 12s'), a['start'] + 14, gain=0.75, rev=0.05, name='pop-1')
     S.add_sig(chop(brk, S.spb, CHOPS['f']), b['start'] + 28, gain=0.8, rev=0.05, name='pop-2')
-    S.add_sig(chop(brk, S.spb, chops('h H h g a y z v')), d['start'], gain=1.0, rev=0.05, name='break')
+    S.add_sig(chop(brk, S.spb, chops('h H h g a y z v')), d['start'], gain=0.85, rev=0.05, name='break')
     S.add_sig(subdrop(), d['start'], gain=0.5, rev=0.0, name='subdrop')
     return S.render()
 
@@ -2851,9 +2861,9 @@ def song_battle_3():
     S.add(shift(la + lb, semis=-12, velmul=0.55), i_marimba, gain=0.5, rev=0.2, name='marimba-dbl')
     S.add(ld, i_square, gain=0.3, rev=0.15, duty=0.25, vib=(6.0, 0.15, 0.15), name='dnb-sq')
     kot = b['T'] + d['T']
-    S.add(arp_ev(kot, [0, None, 1, None, 2, None, 1, None], 0.25, low=64, vel=0.5), i_metallo, gain=0.38, rev=0.25,
+    S.add(arp_ev(kot, [0, None, 1, None, 2, None, 1, None], 0.25, low=64, vel=0.5), i_metallo, gain=0.6, rev=0.25,
           decay=0.35, ombak=5.0, mute=1.4, name='polos')
-    S.add(arp_ev(kot, [None, 2, None, 3, None, 4, None, 3], 0.25, low=64, vel=0.45), i_metallo, gain=0.34, rev=0.25,
+    S.add(arp_ev(kot, [None, 2, None, 3, None, 4, None, 3], 0.25, low=64, vel=0.45), i_metallo, gain=0.55, rev=0.25,
           decay=0.35, ombak=5.0, mute=1.4, name='sangsih')
     S.add(arp_ev(a['T'], [0, 2, 1, 3, 1, 2, 0, 2], 0.5, low=55, vel=0.5, accents=[1, .6, .7, .9, .6, .7, .9, .6]),
           i_marimba, gain=0.5, rev=0.2, name='marimba-arp')
@@ -2879,7 +2889,7 @@ def song_battle_3():
     D.clear(b['start'] + 28, b['start'] + 32, ['ck', 'cs', 'ch', 'co', 'ct'])
     dnb_layer(D, d['start'], 8, 'roll', snare=False, hats=False)
     D.ev['cr'] += [(a['start'], 0, 1, 0.7), (d['start'], 0, 1, 1.0)]
-    D.render(S, gains={'sh': 0.8})
+    D.render(S, gains={'sh': 1.8, 'kt': 1.6})
     brk = make_break(S.spb, tone=220)
     S.add_sig(chop(brk, S.spb, '0 1 4 5 12s 12s 12 13'), a['start'] + 30, gain=0.8, rev=0.05, name='pop-1')
     S.add_sig(chop(brk, S.spb, CHOPS['f']), b['start'] + 28, gain=0.8, rev=0.05, name='pop-2')
@@ -2914,19 +2924,19 @@ def song_battle_4():
     d2 = A.sec('dnb', ['C#m', 'A', 'B', 'G#', 'C#m', 'A', 'D', 'G#7'], B4_D2)
     S = Song(176, A.pos, tail=4, t60=1.1, bright=0.55, drive=1.7)
     la, l1, lb, l2 = lead_ev(a, 0.85), lead_ev(d1, 0.9), lead_ev(b, 0.85), lead_ev(d2, 0.9)
-    S.add(la + lb, i_supersaw, gain=0.55, rev=0.15, echo=(0.75, 0.2, 0.12), name='saw-lead')
+    S.add(la + lb, i_supersaw, gain=1.3, rev=0.15, echo=(0.75, 0.2, 0.12), name='saw-lead')
     S.add(shift(la + lb, semis=-12, velmul=0.5), i_square, gain=0.25, rev=0.12, duty=0.5, vib=None, a=0.002, d=0.08,
           s=0.6, r=0.03, name='sq-low')
-    S.add(l1 + l2, i_distsaw, gain=0.45, rev=0.15, drive=3.0, cut=3800, vib=None, name='dnb-dist')
-    S.add(l1 + l2, i_square, gain=0.3, rev=0.15, duty=0.25, vib=None, name='dnb-sq')
-    S.add(arp_ev(a['T'] + b['T'], [0, 1, 2, 3, 4, 3, 2, 1], 0.25, low=61, vel=0.4), i_square, gain=0.35, rev=0.15,
+    S.add(l1 + l2, i_distsaw, gain=0.9, rev=0.15, drive=3.0, cut=3800, vib=None, name='dnb-dist')
+    S.add(l1 + l2, i_square, gain=0.6, rev=0.15, duty=0.25, vib=None, name='dnb-sq')
+    S.add(arp_ev(a['T'] + b['T'], [0, 1, 2, 3, 4, 3, 2, 1], 0.25, low=61, vel=0.4), i_square, gain=0.6, rev=0.15,
           duty=0.125, a=0.002, d=0.04, s=0.3, r=0.02, vib=None, name='arp')
     S.add(pad_ev(a['T'] + b['T'], low=52, vel=0.45), i_strings, gain=0.25, rev=0.3, a=0.05, r=0.3, cut=2500,
           trem=0.4, name='strings')
     cb = ostinato(a['T'], ['r', 'o', 'r', 'o', 'r', 'o', 'f', 'o'], 0.5, 37, 0.7) + \
         riff(b['T'], [(0, 'r', 0.4, 1.0), (0.5, 'r', 0.2, 0.75), (0.75, 'o', 0.2, 0.8)], low=37, period=1.0)
     S.add_sig(reese(cb, S, det=0.1, cut=260, env_oct=2.4, env_tau=0.06, q=1.7, drive=1.6, sub=0.45, gap=0.02,
-                    mod=cmod(16, 1.2)), gain=0.7, rev=0.03, name='chip-bass')
+                    mod=cmod(16, 1.2)), gain=0.5, rev=0.03, name='chip-bass')
     rz = riff(d1['T'] + d2['T'], [(0, 'r', 2.5, 1.0), (2.5, 'o', 0.5, 0.8), (3, 'f', 1, 0.85)], low=32)
     mod = pmod([(d1['start'], d1['start'] + 16, cmod(1, 1.6)), (d2['start'], d2['start'] + 16, cmod(1, 2.2)),
                 (d2['start'] + 16, d2['start'] + 32, cmod(0.5, 2.4))])
@@ -2968,7 +2978,7 @@ def song_battle_5():
     S.add(la + lb, i_pwm, gain=0.65, rev=0.25, echo=(0.75, 0.25, 0.18), rate=3.0, depth=0.3, vib=(5.2, 0.22, 0.25),
           name='pwm-lead')
     S.add(shift(lb, semis=-12, velmul=0.5), i_tri, gain=0.45, rev=0.25, vib=(5.0, 0.1, 0.3), name='tri-counter')
-    S.add(ld, i_tri, gain=0.55, rev=0.35, echo=(1.5, 0.3, 0.25), a=0.02, d=0.2, s=0.8, r=0.15,
+    S.add(ld, i_tri, gain=0.75, rev=0.35, echo=(1.5, 0.3, 0.25), a=0.02, d=0.2, s=0.8, r=0.15,
           vib=(5.3, 0.2, 0.2), name='dnb-tri')
     S.add(shift(ld, semis=12, velmul=0.4), i_bell, gain=0.25, rev=0.5, ratio=2.0, index=0.8, decay=0.8, name='dnb-bell')
     S.add(pad_ev(A.T('chip'), low=55, vel=0.5), i_strings, gain=0.32, rev=0.4, a=0.3, r=0.8, cut=2000, name='strings')
@@ -3026,16 +3036,16 @@ def song_boss_dnb_1():
     db = A.sec('drop', ['Dm', 'Bb', 'Gm', 'A', 'Dm', 'Bb', 'C#dim7', 'A'], BD1_B)
     S = Song(174, A.pos, tail=4, t60=1.2, bright=0.45, drive=1.8)
     lA, lW, lK, lB = lead_ev(da, 0.9), lead_ev(wb, 0.8), lead_ev(bk, 0.75), lead_ev(db, 0.9)
-    S.add(lA + lB, i_square, gain=0.5, rev=0.15, echo=(0.75, 0.2, 0.12), duty=0.25, vib=(6.0, 0.15, 0.2), name='stab-sq')
-    S.add(shift(lA + lB, semis=-12), i_distsaw, gain=0.45, rev=0.15, drive=4.0, cut=3500, vib=None, a=0.002, d=0.1,
+    S.add(lA + lB, i_square, gain=1.0, rev=0.15, echo=(0.75, 0.2, 0.12), duty=0.25, vib=(6.0, 0.15, 0.2), name='stab-sq')
+    S.add(shift(lA + lB, semis=-12), i_distsaw, gain=0.9, rev=0.15, drive=4.0, cut=3500, vib=None, a=0.002, d=0.1,
           s=0.6, r=0.04, name='stab-dist')
-    S.add(lW, i_pwm, gain=0.5, rev=0.25, echo=(0.75, 0.3, 0.2), rate=5.0, depth=0.25, name='wob-lead')
+    S.add(lW, i_pwm, gain=1.0, rev=0.25, echo=(0.75, 0.3, 0.2), rate=5.0, depth=0.25, name='wob-lead')
     S.add(lK, i_square, gain=0.5, rev=0.4, echo=(1.5, 0.35, 0.3), duty=0.5, vib=(5.0, 0.2, 0.3), name='brk-lead')
     S.add(arp_ev(bu['T'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1], 0.25, low=62, vel=0.45), i_square,
-          gain=0.4, rev=0.2, duty=0.125, a=0.002, d=0.04, s=0.3, r=0.02, vib=None, name='build-arp')
+          gain=0.8, rev=0.2, duty=0.125, a=0.002, d=0.04, s=0.3, r=0.02, vib=None, name='build-arp')
     stabs = [(st + off, mhz(m), 0.3, 0.7) for name, st, d in da['T'] + db['T'] for off in (0, 1.5)
              for m in voicing(name, 55)]
-    S.add(stabs, i_supersaw, gain=0.22, rev=0.2, det=0.35, d=0.1, s=0.5, name='chord-stabs')
+    S.add(stabs, i_supersaw, gain=0.55, rev=0.2, det=0.35, d=0.1, s=0.5, name='chord-stabs')
     S.add(pad_ev(bk['T'] + bu['T'], low=50, vel=0.55), i_choir, gain=0.35, rev=0.6, vowel='a', a=0.5, r=1.2,
           name='choir')
     S.add(pad_ev(da['T'] + wb['T'] + db['T'], low=50, vel=0.4), i_pad, gain=0.22, rev=0.4, a=0.3, r=0.8, name='pad')
@@ -3050,7 +3060,7 @@ def song_boss_dnb_1():
     S.add_sig(reese(rz, S, det=0.26, cut=180, env_oct=1.4, env_tau=0.18, q=1.5, drive=3.0, sub=1.0, mod=mod),
               gain=0.85, rev=0.02, name='reese')
     S.add_sig(reese(riff(bk['T'], [(0, 'r', 4, 0.7)], low=33), S, det=0.1, cut=120, env_oct=0.3, q=0.8, drive=1.0,
-                    sub=1.0), gain=0.5, rev=0.05, name='brk-sub')
+                    sub=1.0), gain=0.35, rev=0.05, name='brk-sub')
     D = Kit()
     dnb_layer(D, da['start'], 8, 'two')
     dnb_layer(D, wb['start'], 8, 'step')
@@ -3097,19 +3107,19 @@ def song_boss_dnb_2():
     db = A.sec('drop', ['F#m', 'D', 'Bm', 'C#', 'F#m', 'D', 'G', 'C#7'], BD2_B)
     S = Song(172, A.pos, tail=4, t60=1.3, bright=0.45, drive=1.8)
     lA, lW, lH, lU, lB = (lead_ev(s, v) for s, v in ((da, 0.9), (wb, 0.75), (hf, 0.75), (bu, 0.8), (db, 0.95)))
-    S.add(lA + lB, i_square, gain=0.5, rev=0.15, echo=(0.75, 0.22, 0.14), duty=0.5, vib=None, bend=(7, 0.012),
+    S.add(lA + lB, i_square, gain=1.1, rev=0.15, echo=(0.75, 0.22, 0.14), duty=0.5, vib=None, bend=(7, 0.012),
           a=0.002, d=0.12, s=0.6, r=0.04, name='laser')
-    S.add(lA + lB, i_supersaw, gain=0.4, rev=0.15, det=0.3, name='saw-dbl')
-    S.add(lW, i_bell, gain=0.4, rev=0.4, echo=(0.75, 0.35, 0.25), ratio=3.5, index=1.6, decay=1.0, name='wob-bell')
-    S.add(lW, i_square, gain=0.3, rev=0.25, duty=0.25, vib=(6.0, 0.2, 0.2), name='wob-sq')
-    S.add(lH, i_pwm, gain=0.55, rev=0.4, echo=(1.0, 0.35, 0.3), rate=2.5, depth=0.35, vib=(5.0, 0.25, 0.25),
+    S.add(lA + lB, i_supersaw, gain=0.9, rev=0.15, det=0.3, name='saw-dbl')
+    S.add(lW, i_bell, gain=0.65, rev=0.4, echo=(0.75, 0.35, 0.25), ratio=3.5, index=1.6, decay=1.0, name='wob-bell')
+    S.add(lW, i_square, gain=0.6, rev=0.25, duty=0.25, vib=(6.0, 0.2, 0.2), name='wob-sq')
+    S.add(lH, i_pwm, gain=1.0, rev=0.4, echo=(1.0, 0.35, 0.3), rate=2.5, depth=0.35, vib=(5.0, 0.25, 0.25),
           name='half-lead')
-    S.add(lU, i_square, gain=0.45, rev=0.25, duty=0.125, vib=None, name='build-lead')
+    S.add(lU, i_square, gain=0.9, rev=0.25, duty=0.125, vib=None, name='build-lead')
     S.add(arp_ev(bu['T'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1], 0.25, low=61, vel=0.4)[:56], i_square,
-          gain=0.35, rev=0.2, duty=0.125, a=0.002, d=0.04, s=0.3, r=0.02, vib=None, name='build-arp')
+          gain=0.7, rev=0.2, duty=0.125, a=0.002, d=0.04, s=0.3, r=0.02, vib=None, name='build-arp')
     stabs = [(st + off, mhz(m), 0.3, 0.7) for name, st, d in da['T'] + db['T'] for off in (0, 1.5)
              for m in voicing(name, 54)]
-    S.add(stabs, i_supersaw, gain=0.22, rev=0.2, det=0.35, d=0.1, s=0.5, name='chord-stabs')
+    S.add(stabs, i_supersaw, gain=0.55, rev=0.2, det=0.35, d=0.1, s=0.5, name='chord-stabs')
     S.add(pad_ev(hf['T'] + bu['T'], low=50, vel=0.5), i_choir, gain=0.3, rev=0.6, vowel='o', a=0.6, r=1.2, name='choir')
     w0, u0 = wb['start'], bu['start']
     mod = pmod([(da['start'], da['start'] + 32, cmod(2, 1.2)), (w0, w0 + 8, cmod(1, 2.8)),
@@ -3175,21 +3185,21 @@ def song_boss_dnb_3():
     db = A.sec('drop', ['G#m', 'E', 'A', 'D#', 'G#m', 'E', 'A', 'D#7'], BD3_B)
     S = Song(176, A.pos, tail=5, t60=1.6, bright=0.35, drive=1.9)
     motif_i, motif_b = lead_ev(it, 0.8, tr=-12), lead_ev(bu, 0.85)
-    S.add(motif_i, i_organ, gain=0.55, rev=0.4, name='organ-motif')
-    S.add(shift(motif_i, semis=-12, velmul=0.6), i_organ, gain=0.35, rev=0.4, name='organ-low')
-    S.add(pad_ev(it['T'] + ch['T'], low=50, vel=0.6), i_choir, gain=0.4, rev=0.6, vowel='a', a=0.4, r=1.0, name='choir')
-    S.add(lead_ev(ch, 0.75), i_choir, gain=0.35, rev=0.5, vowel='o', a=0.1, r=0.4, voices=4, name='choir-motif')
-    S.add(lead_ev(ch, 0.6, tr=-12), i_organ, gain=0.3, rev=0.4, name='organ-motif-2')
+    S.add(motif_i, i_organ, gain=1.6, rev=0.4, name='organ-motif')
+    S.add(shift(motif_i, semis=-12, velmul=0.6), i_organ, gain=1.0, rev=0.4, name='organ-low')
+    S.add(pad_ev(it['T'] + ch['T'], low=50, vel=0.6), i_choir, gain=0.8, rev=0.6, vowel='a', a=0.4, r=1.0, name='choir')
+    S.add(lead_ev(ch, 0.75), i_choir, gain=1.1, rev=0.5, vowel='o', a=0.1, r=0.4, voices=4, name='choir-motif')
+    S.add(lead_ev(ch, 0.6, tr=-12), i_organ, gain=0.8, rev=0.4, name='organ-motif-2')
     S.add(motif_b, i_distsaw, gain=0.5, rev=0.2, drive=5.0, cut=3000, name='build-dist')
     S.add(motif_b, i_square, gain=0.3, rev=0.2, duty=0.25, name='build-sq')
     lA, lB = lead_ev(da, 0.9), lead_ev(db, 0.95)
-    S.add(lA + lB, i_square, gain=0.45, rev=0.15, echo=(0.75, 0.2, 0.12), duty=0.25, vib=(6.0, 0.15, 0.2),
+    S.add(lA + lB, i_square, gain=1.0, rev=0.15, echo=(0.75, 0.2, 0.12), duty=0.25, vib=(6.0, 0.15, 0.2),
           name='stab-sq')
-    S.add(shift(lA + lB, semis=-12), i_distsaw, gain=0.45, rev=0.15, drive=5.0, cut=3200, vib=None, a=0.002, d=0.1,
+    S.add(shift(lA + lB, semis=-12), i_distsaw, gain=0.9, rev=0.15, drive=5.0, cut=3200, vib=None, a=0.002, d=0.1,
           s=0.6, r=0.04, name='stab-dist')
     S.add([(st + off, mhz(m), 0.4, 0.8) for name, st, d in da['T'] + db['T'] for off in (0, 1.5)
-           for m in voicing(name, 55)], i_organ, gain=0.3, rev=0.3, name='organ-stabs')
-    rI = riff(it['T'], [(0, 'r', 1.5, 1.0), (2, 'r', 0.5, 0.8), (2.5, 'r', 1.5, 0.9)], low=32)
+           for m in voicing(name, 55)], i_organ, gain=0.6, rev=0.3, name='organ-stabs')
+    rI = riff(it['T'], [(0, 'r', 1.5, 1.0), (2, 'r', 0.5, 0.8), (2.5, 'r', 1.5, 0.9)], low=32, vel=0.6)
     rD = riff(da['T'] + db['T'], [(0, 'r', 0.5, 1.0), (0.5, 'r', 0.5, 0.85), (1, 'o', 0.5, 0.8), (1.5, 'r', 1, 0.95),
                                   (2.5, 'r', 0.5, 0.85), (3, 't', 0.5, 0.85), (3.5, 'f', 0.5, 0.9)], low=32)
     rC = riff(ch['T'], [(0, 'r', 3, 1.0), (3, 'o', 1, 0.85)], low=32)
@@ -3200,7 +3210,7 @@ def song_boss_dnb_3():
                 (db['start'], db['start'] + 32, cmod(0.5, 2.0))])
     S.add_sig(reese(rI + rD + rC + rU, S, det=0.32, cut=160, env_oct=1.5, env_tau=0.15, q=1.8, drive=4.0, sub=1.0,
                     mod=mod), gain=0.9, rev=0.02, name='reese')
-    S.add(shift(rD, semis=12, velmul=0.6), i_distsaw, gain=0.25, rev=0.05, drive=6.0, cut=1500, vib=None, a=0.002,
+    S.add(shift(rD, semis=12, velmul=0.6), i_distsaw, gain=0.4, rev=0.05, drive=6.0, cut=1500, vib=None, a=0.002,
           d=0.1, s=0.7, r=0.03, name='growl')
     D = Kit()
     dnb_layer(D, it['start'], 4, 'half')
@@ -3219,7 +3229,7 @@ def song_boss_dnb_3():
     clangs = [(it['start'] + 4 * k, 0) for k in range(4)] + [(da['start'], 0), (da['start'] + 16, 0), (db['start'], 0),
                                                             (db['start'] + 16, 0)]
     for k, (b0, _) in enumerate(clangs):
-        S.add_sig(clang(660 + 40 * (k % 3), 1.0), b0, gain=0.3, rev=0.35, name='clang')
+        S.add_sig(clang(660 + 40 * (k % 3), 1.0), b0, gain=0.6, rev=0.35, name='clang')
     S.add_sig(riser_sig(16 * S.spb), bu['start'], gain=0.4, rev=0.25, name='riser')
     for s in (da, db):
         S.add_sig(subdrop(), s['start'], gain=0.6, rev=0.0, name='subdrop')
@@ -3259,8 +3269,8 @@ def song_beach_2():
         rim += pat("....x.......x...", st, vmap={'x': 0.35})
         if bar >= 8:
             cg += [(b, 300.0, d, v) for b, _, d, v in pat("......x.......x.", st, vmap={'x': 0.4})]
-    S.add(sh, d_shaker, gain=0.6, rev=0.1, hum=0.004, name='shaker')
-    S.add(rim, d_clave, gain=0.25, rev=0.2, fc=1700, name='rim')
+    S.add(sh, d_shaker, gain=1.2, rev=0.1, hum=0.004, name='shaker')
+    S.add(rim, d_clave, gain=0.7, rev=0.2, fc=1700, name='rim')
     S.add(cg, d_conga, gain=0.35, rev=0.15, name='conga')
     S.add_post(cfilt(_waves(S.L), lambda v: lp(v, 4000)), -15)
     return S.render()
@@ -3290,7 +3300,7 @@ def song_village_2():
         kempul.append((st + 8, sl_hz(bal[st + 7], 290) / 4, 2, 0.6))
         for k in (4, 12):
             kenong.append((st + k, sl_hz(bal[st + k - 1], 290), 2, 0.4))
-    S.add(gong, i_gong, gain=0.75, rev=0.4, decay=7.0, beat=0.7, name='gong')
+    S.add(gong, i_gong, gain=0.45, rev=0.4, decay=7.0, beat=0.7, name='gong')
     S.add(kempul, i_gong, gain=0.5, rev=0.35, decay=3.5, beat=1.4, thud=0.1, name='kempul')
     S.add(kenong, i_gong, gain=0.3, rev=0.35, decay=2.2, beat=2.0, thud=0.05, name='kenong')
     S.add([(st, 0, 1, 0.6) for st in range(0, 48, 16)], k_dhe, gain=0.4, rev=0.2, name='kendang-dhe')
@@ -3302,7 +3312,7 @@ def song_village_2():
         p, d = tok.split(':')
         ev.append((b, sl_hz(gtok(p), 580), float(d), 0.6))
         b += float(d)
-    S.add(ev, i_suling, gain=0.45, rev=0.5, echo=(1.0, 0.3, 0.2), name='suling')
+    S.add(ev, i_suling, gain=0.6, rev=0.5, echo=(1.0, 0.3, 0.2), name='suling')
     S.add_post(_night(S.L), -11)
     return S.render()
 
@@ -3320,9 +3330,9 @@ def song_steppe_2():
     m = mel(STEPPE2_SLIDE, bpb=4, vel=0.8)
     v = glide_voice(m, S.spb, S.N, port=0.08, vib=(4.6, 0.3), harm=0.3, gap=0.08, att_tau=0.05)
     v = lp(np.tanh(1.8 * v), 3500)
-    S.add_sig(v, gain=0.45, rev=0.35, echo=(1.5, 0.35, 0.3), name='slide')
-    S.add(pad_ev(T, low=67, vel=0.5), i_haze, gain=0.5, rev=0.6, a=1.5, r=2.0, name='haze')
-    S.add(arp_ev(T, [0, None, 2, 1, None, 3, None, 2], 0.5, low=50, vel=0.45), i_pluck, gain=0.55, rev=0.25,
+    S.add_sig(v, gain=0.22, rev=0.35, echo=(1.5, 0.35, 0.3), name='slide')
+    S.add(pad_ev(T, low=67, vel=0.5), i_haze, gain=0.65, rev=0.6, a=1.5, r=2.0, name='haze')
+    S.add(arp_ev(T, [0, None, 2, 1, None, 3, None, 2], 0.5, low=50, vel=0.45), i_pluck, gain=0.9, rev=0.25,
           decay=2.0, bright=0.6, rel=0.5, name='guitar')
     S.add(bass_ev(T, [(0, 0, 3.5, 1.0)], low=38), i_softbass, gain=0.5, rev=0.15, a=0.05, r=0.8, name='bass')
     S.add([(b, 70.0, 1, v_) for b, v_ in ((0, .7), (2.5, .4), (16, .6), (18.5, .35), (32, .65), (34.5, .4))], d_tom,
@@ -3346,7 +3356,7 @@ def song_farm_2():
     """Farm after the power cut -- stealth (Bb minor, 70 bpm): almost nothing. Low drone, creeping
     pizzicato, heartbeat, tritone swell, dying electrical buzz, dark air."""
     S = Song(70, 48, tail=8, t60=3.0, bright=0.25)
-    p = mel(FARM2_PIZZ, bpb=4, vel=0.75)
+    p = shift(mel(FARM2_PIZZ, bpb=4, vel=0.75), beats=0.5)      # off the loop seam
     S.add(p, i_pluck, gain=0.7, rev=0.3, decay=0.5, bright=0.35, rel=0.08, nh=12, name='pizz')
     S.add([(0, mhz(nm('Bb1')), 48, 0.7), (0, mhz(nm('F2')), 48, 0.45)], i_strings, gain=0.5, rev=0.4, a=4.0, r=4.0,
           cut=400, name='drone')
@@ -3354,7 +3364,7 @@ def song_farm_2():
     S.add([(26, mhz(nm('A5')), 14, 0.25), (30, mhz(nm('Bb5')), 10, 0.2)], i_strings, gain=0.25, rev=0.6, a=4.0,
           r=3.0, cut=4000, voices=2, trem=0.6, name='hi-cluster')
     hb = [(b + o, 0, 0.25, v) for b in range(0, 32, 2) for o, v in ((0, 0.7), (0.35, 0.45))]
-    S.add(hb, d_kick, gain=0.35, rev=0.1, f0=42, punch=50, dec=0.3, hum=0.0, name='heartbeat')
+    S.add(hb, d_heart, gain=0.35, rev=0.1, hum=0.0, name='heartbeat')
     S.add_sig(buzz_sig(0.7), 10.5, gain=0.12, rev=0.3, name='buzz-1')
     S.add_sig(buzz_sig(0.5), 37.0, gain=0.1, rev=0.3, name='buzz-2')
     n = S.L
@@ -3384,7 +3394,7 @@ def song_cave():
     pent = [88, 90, 92, 95, 97, 100]
     beats = np.sort(RNG.choice(np.arange(0, 64, 0.5), 22, replace=False))
     drips = [(float(b), mhz(int(RNG.choice(pent))), 0.2, float(RNG.uniform(0.4, 0.9))) for b in beats]
-    S.add(drips, i_drip, gain=0.6, rev=0.8, echo=(1.0, 0.4, 0.35), hum=0.0, name='drips')
+    S.add(drips, i_drip, gain=1.2, rev=0.8, echo=(1.0, 0.4, 0.35), hum=0.0, name='drips')
     n = S.L
     S.add_post(pnoise(n, 30, 250) * (0.5 + 0.5 * psmooth(n, 3)), -22)
     return S.render()
@@ -3412,7 +3422,7 @@ def song_cellar():
     S.add([(0, mhz(nm('A2')), 48, 0.5), (0, mhz(nm('E3')), 48, 0.4)], i_organ, gain=0.12, rev=0.5, a=3.0, r=3.0,
           name='organ-drone')
     for st, f in ((7.5, 170), (29.0, 210)):
-        S.add_sig(creak(0.6, f) * 0.5, st, gain=0.4, rev=0.5, name='creak')
+        S.add_sig(creak(0.6, f) * 0.5, st, gain=0.8, rev=0.5, name='creak')
     S.add_post(_bubbles(S.L, 34), -19)
     return S.render()
 
@@ -3450,8 +3460,8 @@ def song_shop():
         ride += [(st + o, 0, 0.5, v) for o, v in ((0, .6), (1, .5), (1 + 2 / 3, .35), (2, .6), (3, .5), (3 + 2 / 3, .35))]
         brush += [(st + 1, 0, 0.5, 0.6), (st + 3, 0, 0.5, 0.6)]
         kick += [(st, 0, 0.5, 0.5), (st + 2, 0, 0.5, 0.4)]
-    S.add(ride, d_ride, gain=0.35, rev=0.15, dec=0.9, hum=0.002, name='ride')
-    S.add(brush, d_brush, gain=0.55, rev=0.15, name='brush')
+    S.add(ride, d_ride, gain=0.55, rev=0.15, dec=0.9, hum=0.002, name='ride')
+    S.add(brush, d_brush, gain=1.0, rev=0.15, name='brush')
     S.add(kick, d_kick, gain=0.18, rev=0.05, f0=50, dec=0.25, name='kick')
     S.add_post(_crackle_loop(S.L, 260), -27)
     return S.render()
@@ -3709,8 +3719,8 @@ def sfx_well():
 
 
 def sfx_shop_open():
-    ding = i_bell(2093, 0.9, 1.0, ratio=2.0, index=0.6, decay=0.55) + \
-        0.5 * i_bell(2637, 0.9, 0.6, ratio=2.0, index=0.6, decay=0.45)
+    ding = mix(0.9, [(0, i_bell(2093, 0.9, 1.0, ratio=2.0, index=0.6, decay=0.55)),
+                     (0, 0.5 * i_bell(2637, 0.9, 0.6, ratio=2.0, index=0.6, decay=0.45))])
     n = ns(0.25)
     drawer = bp(noise(n), 300, 2500) * smooth_env(n, 0.05, 0.08) * 0.5 + crackles(n, 20, 1.0) * 0.6
     coins = [(0.42 + k * 0.035, coin_clink(RNG.uniform(3000, 5000)) * 0.25) for k in range(3)]
@@ -3867,13 +3877,13 @@ def sfx_macaque_2():                 # "ak-ak-ak-ak" chatter + short screech
 def snap(f=2400, a=1.0):
     m = ns(0.06)
     tm = t_(m)
-    x = hp(noise(m), 3000) * np.exp(-tm / 0.0009) + np.sin(TAU * f * tm) * np.exp(-tm / 0.006) * 0.5 + \
+    x = bp(noise(m), 2500, 8000) * np.exp(-tm / 0.0012) + np.sin(TAU * f * tm) * np.exp(-tm / 0.006) * 0.5 + \
         np.sin(TAU * 420 * tm) * np.exp(-tm / 0.01) * 0.4
-    return fin(x * att(m, 0.0003)) * a
+    return fin(x * att(m, 0.0012)) * a
 
 
 def sfx_crab_1():
-    return finish(mix(0.35, [(0, snap(2300)), (0.15, snap(2700, 0.9))]), -2)
+    return finish(mix(0.4, [(0, snap(2300)), (0.15, snap(2700, 0.9)), (0.28, snap(2500, 0.6))]), -2)
 
 
 def sfx_crab_2():
