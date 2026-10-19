@@ -10,6 +10,10 @@ func _ready() -> void:
 	if a.has("--capture"):
 		_capture_after(float(a[a.find("--capture") + 1]))
 	await get_tree().process_frame
+	if a.has("--cs"):
+		Game.new_game("Ania", "krieger")
+		cutscene(a[a.find("--cs") + 1], false)
+		return
 	if a.has("--creator"):
 		var c := CharacterCreator.new()
 		add_child(c)
@@ -118,6 +122,41 @@ func battle(group: Array, opts := {}) -> String:
 		Audio.music(mus, 0.5)
 	await UI.fade_in(0.4)
 	return r
+
+## Plays an in-engine cinematic (see story/cutscenes.gd). Leaves the screen faded out
+## unless fade_back is true (then it returns to the current map).
+func cutscene(scene: String, fade_back := true) -> void:
+	var prev_music := Audio.current_music()
+	await UI.fade_out(0.6)
+	var had_map := map != null and is_instance_valid(map)
+	var env_backup: Environment = null
+	if had_map:
+		map.active = false
+		map.visible = false
+		map.process_mode = Node.PROCESS_MODE_DISABLED
+		env_backup = map.atmos.world_env.environment
+		map.atmos.world_env.environment = null
+	UI.show_hud(false)
+	UI.clear_banners()
+	var cs := Cutscene.new()
+	add_child(cs)
+	var cz := Cutscenes.new()
+	await cz.call(scene, cs)
+	var end_col: Color = cs.get_meta("end_color", Color.BLACK)
+	await UI.fade_out(0.9, end_col)
+	await UI.letterbox(false, 0.01)
+	cs.queue_free()
+	await get_tree().process_frame
+	if had_map and is_instance_valid(map):
+		map.atmos.world_env.environment = env_backup
+		map.visible = true
+		map.process_mode = Node.PROCESS_MODE_INHERIT
+		map.camera.current = true
+		if fade_back:
+			Audio.music(prev_music, 1.0)
+			UI.show_hud(true)
+			await UI.fade_in(0.7)
+			map.active = true
 
 func game_over() -> void:
 	UI.show_hud(false)

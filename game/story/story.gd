@@ -41,17 +41,7 @@ func think(text: String) -> void:
 
 # ======================================================================= PROLOG
 func intro() -> void:
-	Audio.music("title", 1.0)
-	await UI.fade_in(0.1)
-	await UI.illustration("ill_hall", [
-		"Inmitten einer finsteren Halle beginnt ein neuer Tag.",
-		"Nicht einmal einen halben Quadratmeter Käfig für jede verlorene Seele.",
-		"Nahrung? Nein! Ich nenne es pure Chemie.",
-		"So lebt ein Chicken in eurer Welt, nicht wahr? Misshandelt, vergiftet und bis zuletzt gequält.",
-		"Doch ... ihr Menschen fühlt euch fabelhaft, richtig?",
-		"Auf Gili Genting ist es anders. Hier gibt es den Pakt.",
-	], "memory")
-	await UI.fade_out(0.5)
+	await main.cutscene("intro", false)
 
 # ======================================================================= KAPITEL 1: STRAND
 func ev_strand_enter(_a) -> void:
@@ -76,12 +66,7 @@ func ev_mem_pakt(_a) -> void:
 		await say([["", "Der Stein summt leise. Er hat dir gesagt, was er weiß."]])
 		return
 	Audio.sfx("memory_flash")
-	await UI.illustration("ill_pact", [
-		"Bei meiner Geburt wurde ein Pakt mit dem Menschen geschlossen, dessen Besitz ich bin.",
-		"Es wird mir gestattet, uneingeschränkt auf der gesamten Insel Gili Genting zu verweilen.",
-		"Im Gegenzug muss ich zu einer bestimmten Zeit zurückkehren, um meinen Zweck zu erfüllen.",
-		"Schon als der erste Sonnenstrahl mich durch die angebrochene Eierschale erleuchtete, erfuhr ich den exakten Zeitpunkt meiner Schlachtung.",
-	], "memory")
+	await main.cutscene("pakt")
 	Game.set_flag("mem1")
 	Game.days_left = 7
 	Game.set_step("main", 1)
@@ -627,15 +612,7 @@ func ev_heuschrecke(_a) -> void:
 		["Heuschrecke", "Du bist nicht ehrlich, Kind. Du bist blind. Und taub ... das bist du auch."],
 		["Heuschrecke", "Mach die Augen zu, sei still! Dann hörst auch du das wundervolle Lied, das ich zu meinem Tode sing'."],
 	])
-	Audio.music("void", 1.0)
-	await UI.illustration("ill_void", [
-		"Zögerlich schließt das Chicken die Augen. Ein Gesang erklingt, so herrlich wie der Tausender Vögel.",
-		"♪ Unvorhersehbar ist der Schlüssel zum Glück. ♪",
-		"♪ Die Menge macht das Gift, durch das jenes Licht der Menschen in einem Augenblick erlischt. ♪",
-		"♪ Der Mensch war Tier und kann sich wieder wandeln – so kann auch das Tier hinterlistig wie die Menschheit handeln. ♪",
-		"♪ Die Freiheit, die du wahrlich hast, ist zu entscheiden, wie und was du machst. ♪",
-		"♪ Doch das Leid, das dich begleitet, liegt der Entscheidung inne, die dich leitet. ♪",
-	])
+	await main.cutscene("void_song", false)
 	Game.set_flag("void_seen")
 	await UI.fade_out(1.2, Color(1, 1, 1))
 	var companions := Game.active_party().filter(func(x): return x != "ania")
@@ -678,12 +655,7 @@ func ev_klippe_enter(_a) -> void:
 func ev_klippe_edge(_a) -> void:
 	if Game.flag("revolution"):
 		return
-	await UI.illustration("ill_cliff", [
-		"Kurz vor der Abbruchkante sieht sie das erkrankte Chicken von damals.",
-		"Regungslos, in sich zusammengeklappt liegt er auf dem Boden. Der Wind saust durch die kalten Federn.",
-		"Obwohl er schließlich keine Buße tun konnte, scheint es, als wäre er nun endlich frei.",
-		"Plötzlich strömen ihr Tränen aus den Augen. In ihrem Leib macht sich eine längst verborgene Wut breit.",
-	])
+	await main.cutscene("klippe")
 	while true:
 		var c := await ask(N, "Wie warm sich das Ertrinken wohl anfühlen muss?", ["Springen.", "Die Augen schließen. Und fühlen."])
 		if c == 0:
@@ -699,17 +671,8 @@ func ev_klippe_edge(_a) -> void:
 			await UI.fade_in(0.4)
 			continue
 		break
-	Audio.music("revolution", 0.5)
-	UI.flash(Color(1, 0.2, 0.15), 1.2, 0.8)
+	await main.cutscene("revolution")
 	map().atmos.sun.light_color = Color(1.0, 0.3, 0.25)
-	await UI.narrate([
-		"Sie schließt die Augen und bändigt die aufgeregte Atmung.",
-		"Sie fühlt es. Eine Erfahrung, so intensiv wie das Eierlegen.",
-		"Es war kein Ende!",
-		"Nein – der Zeiger schlug auf Schlachten, und sie fühlte sich lebendiger als je zuvor.",
-		"Eure Lügen, eure Taten und vor allem eure Gier – all das widert mich an.",
-		"Rache. An denjenigen, die es verdient haben.",
-	], "blood", 0.85)
 	await UI.chapter("", "Der Zeiger schlägt auf Revolution.")
 	Game.set_flag("revolution")
 	Game.bonus_points += 2
@@ -725,12 +688,7 @@ func ev_klippe_edge(_a) -> void:
 			"paprika": await say([["Madame Paprika", "Endlich ein Finale, das meiner würdig ist!"]])
 	if Game.active_party().size() == 1:
 		await think("Allein. Aber nicht mehr verloren.")
-	await UI.illustration("ill_revolution", [
-		"Der Plan: Am Abend des Vollmondes wird heimlich die zentrale Stromversorgung gekappt.",
-		"Die Jungen und die Flinken nutzen jedes Schlupfloch, um in die Häuser einzudringen.",
-		"Ihr Menschen glaubt, ihr hättet die Kontrolle über alle Lebewesen auf diesem Planeten.",
-		"Doch wir werden euch zeigen, dass wir nur eine Nacht benötigen, um den Spieß umzudrehen.",
-	], "farm")
+	await main.cutscene("plan", false)
 	main.goto_map("hof", "start")
 
 # ======================================================================= KAPITEL 5: HOF
@@ -879,12 +837,7 @@ func ev_spiegel(_a) -> void:
 		await say([["", "Ein gesprungener Spiegel. Du siehst ein Huhn. Natürlich siehst du ein Huhn."]])
 		return
 	Audio.sfx("memory_flash")
-	await UI.illustration("ill_mirror", [
-		"Während sich der Mond schleichend vor die Sonne drängt, fühlt sie, dass sich etwas Grundlegendes verändert.",
-		"Der Raum scheint enger zu werden, zu schrumpfen, sie zu zerquetschen.",
-		"Im Spiegel erkennt sie einen Menschen. Ein Mädchen. Vielleicht schon eine junge Dame.",
-		"Draußen ertönt grauenvolles Geschrei. Die Straßen sind menschengefüllt – und ein jeder verspürt dasselbe altneue Leid.",
-	], "cliff")
+	await main.cutscene("mirror")
 	await UI.narrate([
 		"\"Hör auf zu weinen, Kind. Gewiss verspürst du Schmerz, so unerträglich ...\"",
 		"\"Dennoch trägst nun du die Last, die ein jeder Mensch tagein, tagaus zu tragen hat.\"",
@@ -914,12 +867,7 @@ func _ending() -> void:
 		"Fünf weitere Jahre. Von Jimmy fehlt jede Spur.",
 		"Hannah hat ihre Ideale aufgegeben. Sie führt ein sorgloses Leben in einem kleinen Dorf, umgeben von schönster Natur.",
 	], "book", 1.0)
-	await UI.illustration("ill_ending", [
-		"Heute versammelt sich die gesamte Familie für einen besonderen Tag.",
-		"Ihr ältester Sohn feiert den siebten Geburtstag.",
-		"Und selbstverständlich wird sein liebstes Gericht serviert.",
-		"Chicken Wings mit Pommes.",
-	])
+	await main.cutscene("ending", false)
 	await UI.narrate(["Mach deine Augen zu.", "Und fühl's."], "void", 1.0)
 	await _credits()
 	main.show_title()

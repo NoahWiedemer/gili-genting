@@ -662,6 +662,97 @@ func illustration(img: String, lines: Array, music := "") -> void:
 		Audio.music(prev, 1.0)
 	busy_count = max(0, busy_count - 1)
 
+# ------------------------------------------------------------------ cinematic captions
+var _lb_top: ColorRect
+var _lb_bot: ColorRect
+var _cap: RichTextLabel
+var _cap_hint: Label
+
+func letterbox(on: bool, t := 0.6) -> void:
+	if _lb_top == null:
+		_lb_top = ColorRect.new()
+		_lb_bot = ColorRect.new()
+		for r in [_lb_top, _lb_bot]:
+			r.color = Color(0, 0, 0, 1)
+			r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(r)
+		_lb_top.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		_lb_bot.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		_cap = RichTextLabel.new()
+		_cap.theme = theme
+		_cap.bbcode_enabled = true
+		_cap.fit_content = true
+		_cap.scroll_active = false
+		_cap.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		_cap.offset_left = 70
+		_cap.offset_right = -70
+		_cap.offset_top = -50
+		_cap.offset_bottom = -8
+		_cap.add_theme_color_override("default_color", CREAM)
+		add_child(_cap)
+		_cap_hint = label("▼", GOLD)
+		_cap_hint.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+		_cap_hint.offset_left = -60
+		_cap_hint.offset_right = -24
+		_cap_hint.offset_top = -22
+		_cap_hint.offset_bottom = -8
+		_cap_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		add_child(_cap_hint)
+		var ht := _cap_hint.create_tween().set_loops()
+		ht.tween_property(_cap_hint, "modulate:a", 0.25, 0.5)
+		ht.tween_property(_cap_hint, "modulate:a", 1.0, 0.5)
+		_cap_hint.visible = false
+		_lb_top.offset_bottom = 0
+		_lb_bot.offset_top = 0
+	# keep bars above the world fade but below dialogs
+	move_child(_lb_top, _fade.get_index() + 1)
+	move_child(_lb_bot, _fade.get_index() + 1)
+	var h := 54.0 if on else 0.0
+	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(_lb_top, "offset_bottom", h, t)
+	tw.tween_property(_lb_bot, "offset_top", -h, t)
+	if not on:
+		_cap.text = ""
+		_cap_hint.visible = false
+	await tw.finished
+
+## Cinematic subtitle in the lower letterbox bar. Always waits for the player (never auto-advances).
+func caption(text: String, who := "") -> void:
+	busy_count += 1
+	text = text.replace("{name}", Game.player_name)
+	_cap.text = ("[color=#ffcc60]%s:[/color]  " % who if who != "" else "") + text
+	_cap.visible_characters = 0
+	_cap_hint.visible = false
+	_narr.visible = true   # route accept input
+	_narr.text = ""
+	_typing = true
+	_skip = false
+	var total := _cap.get_total_character_count()
+	var i := 0
+	while i < total and not _skip and not Game.auto:
+		i += 1
+		_cap.visible_characters = i
+		if i % 4 == 0:
+			Audio.sfx("text_blip", randf_range(0.8, 0.95), 0.25)
+		await get_tree().create_timer(0.03).timeout
+	_cap.visible_characters = -1
+	_typing = false
+	_waiting = true
+	_cap_hint.visible = true
+	if Game.auto:
+		await get_tree().create_timer(0.02).timeout
+	else:
+		await _advance
+	_waiting = false
+	_cap_hint.visible = false
+	_narr.visible = false
+	Audio.sfx("ui_select", 0.8, 0.3)
+	busy_count = max(0, busy_count - 1)
+
+func clear_caption() -> void:
+	if _cap:
+		_cap.text = ""
+
 func memory(lines: Array) -> void:
 	var prev := Audio.current_music()
 	Audio.sfx("memory_flash")
