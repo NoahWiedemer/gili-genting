@@ -7,3 +7,6 @@ game/export/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Exported builds (tools/release.sh)
+build/

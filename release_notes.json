@@ -1,0 +1,4 @@
+[
+ {"version": "0.3.1", "title": "Cutscenes & Soundtrack", "date": "2026-10-19", "sections": [{"title": "Neu", "items": ["Cutscenes laufen jetzt in der Engine statt als Illustrations-Slides", "Neue Chiptune- und Drum-&-Bass-Kampfthemen, Boss-Musik, Stimmen & Soundeffekte"]}]},
+ {"version": "0.3.0", "title": "Erste spielbare Version", "date": "2026-10-18", "sections": [{"title": "Neu", "items": ["5 Kapitel + Epilog, Charakter-Editor, 5 Klassen mit Skilltree", "Rundenbasiertes Kampfsystem mit Statuseffekten und vier Bossen"]}]}
+]
